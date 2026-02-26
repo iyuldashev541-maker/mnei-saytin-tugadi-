@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Finance Elite</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --bg-dark: #020617;
+            --glass: rgba(30, 41, 59, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            font-family: 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            /* Gradient Mesh orqa foni */
+            background-image:
+                radial-gradient(at 0% 0%, hsla(210, 100%, 15%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(240, 100%, 10%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 100%, hsla(200, 100%, 12%, 1) 0, transparent 50%);
+        }
+
+        /* Orqa fondagi nurli bloblar */
+        .blobs {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; overflow: hidden; filter: blur(80px);
+        }
+        .blob {
+            position: absolute; width: 300px; height: 300px; border-radius: 50%;
+            background: var(--primary); opacity: 0.2; animation: move 15s infinite alternate;
+        }
+        .blob-2 { background: var(--secondary); left: 50%; top: 40%; animation-delay: -5s; }
+
+        @keyframes move {
+            from { transform: translate(-20%, -20%); }
+            to { transform: translate(20%, 20%); }
+        }
+
+        .container { max-width: 480px; margin: 0 auto; z-index: 1; }
+
+        /* Glassmorphism Card */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .balance-label { font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-amount { font-size: 36px; font-weight: 800; margin: 5px 0; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .section-title { font-size: 16px; font-weight: 600; margin: 25px 0 15px 5px; color: #cbd5e1; }
+
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+
+        /* Button design */
+        .category-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 18px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .category-btn:active {
+            transform: scale(0.92);
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+        }
+
+        .icon { font-size: 26px; margin-bottom: 8px; display: block; }
+        .name { font-size: 14px; font-weight: 500; color: #e2e8f0; }
+
+        .chart-box { height: 220px; width: 100%; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="blobs">
+        <div class="blob"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="container">
+        <div class="glass-card">
+            <div class="balance-label">Umumiy Balans</div>
+            <div class="balance-amount">000000000 <span style="font-size: 18px;">UZS</span></div>
+            <div class="chart-box">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+
+        <div class="section-title">Tezkor Operatsiyalar</div>
+
+        <div class="grid">
+            <div class="category-btn" onclick="send('🍎 Mevalar')">
+                <span class="icon">🍎</span>
+                <span class="name">Mevalar</span>
+            </div>
+            <div class="category-btn" onclick="send('🚕 Taksi')">
+                <span class="icon">🚕</span>
+                <span class="name">Taksi</span>
+            </div>
+            <div class="category-btn" onclick="send('🥤 Ichimliklar')">
+                <span class="icon">🥤</span>
+                <span class="name">Ichimlik</span>
+            </div>
+            <div class="category-btn" onclick="send('🏠 Ro\'zg\'or')">
+                <span class="icon">🏠</span>
+                <span class="name">Ro'zg'or</span>
+            </div>
+            <div class="category-btn" onclick="send('📶 Internet')">
+                <span class="icon">📶</span>
+                <span class="name">Internet</span>
+            </div>
+            <div class="category-btn" onclick="send('🎁 Boshqa')">
+                <span class="icon">🎁</span>
+                <span class="name">Boshqa</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        function send(category) {
+            tg.HapticFeedback.impactOccurred('medium');
+            try {
+                tg.sendData(category);
+                tg.close();
+            } catch (e) {
+                console.error("Xato:", e);
+            }
+        }
+
+        // Chart.js - Minimalistik grafik
+        const ctx = document.getElementById('myChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['D', 'S', 'Ch', 'P', 'J', 'Sh'],
+                datasets: [{
+                    data: [12, 18, 15, 25, 22, 30],
+                    borderColor: '#38bdf8',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: (context) => {
+                        const gradient = context.chart.ctx.createLinearGradient(0, 0, 0, 200);
+                        gradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+                        gradient.addColorStop(1, 'transparent');
+                        return gradient;
+                    },
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
+                    y: { display: False, grid: { display: false } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
